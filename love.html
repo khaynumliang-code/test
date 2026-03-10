@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>Mwe Sein - Vertical Interactive Book</title>
     <style>
-        /* 增加 touch-action: none 防止移动端下拉刷新干扰翻页 */
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: "Segoe UI", sans-serif; -webkit-user-select: none; user-select: none; touch-action: none; }
+        /* 基础设置 */
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: "Segoe UI", "Tahoma", "Geneva", Verdana, sans-serif; -webkit-user-select: none; user-select: none; touch-action: none; }
         canvas { display: block; position: absolute; top: 0; left: 0; }
         #fwCanvas { z-index: 50; pointer-events: none; }
         #particleCanvas { z-index: 100; pointer-events: none; }
@@ -20,6 +20,7 @@
 
         .book { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
         
+        /* 螺旋环 */
         .spiral {
             position: absolute; top: -15px; left: 20px; width: calc(100% - 40px); height: 30px;
             display: flex; flex-direction: row; justify-content: space-around;
@@ -31,12 +32,12 @@
             transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        /* 页面基础 */
         .page {
             position: absolute; width: 100%; height: 100%; top: 0; left: 0;
             transform-origin: top; transform-style: preserve-3d;
             transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: grab;
-            /* 增加硬件加速 */
             will-change: transform;
         }
         .page:active { cursor: grabbing; }
@@ -46,6 +47,7 @@
             border-radius: 5px 5px 15px 15px; display: flex; align-items: center; justify-content: center; overflow: hidden;
         }
 
+        /* 封面样式 - 强化文字 */
         .cover {
             background-color: #b3956e;
             background-image: 
@@ -56,36 +58,68 @@
             box-shadow: inset 0 0 30px rgba(0,0,0,0.2);
         }
         
-        .cover-title { text-align: center; color: #3a2b1a; pointer-events: none; }
-        .cover-title h1 { font-size: 52px; margin: 0; font-family: "Georgia", serif; }
+        .cover-title { text-align: center; color: #2a1f12; pointer-events: none; }
+        .cover-title h1 { 
+            font-size: 64px; /* 加大 */
+            margin: 0; 
+            font-family: "Georgia", serif; 
+            font-weight: bold;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.3), -1px -1px 0px rgba(0,0,0,0.5); /* 雕刻感 */
+        }
+        .cover-title p {
+            letter-spacing: 8px; 
+            font-size: 18px; 
+            margin-top: 10px; 
+            font-weight: bold;
+            opacity: 0.8;
+        }
 
+        /* 内页样式 */
         .page-inner { 
             background-color: #fffef0; 
             background-image: 
                 linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.02) 5%, transparent 15%),
                 url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3dXWtpaW1tbW9vb3Nzc3V1dXb29vjy8vT09Pd3d3f39/m5ubp6enr6+vt7e3u7u7x8fHy8vLz8/P09PT19fX29vb39/f5+fn6+vn7+/sJaN43AAAAtklEQVQ4y2P4z8AEAtY8NmwAmBwGAwS+GjYAxH6+bXWwYw93Xv4M8f9g488Xf9j688Uftf588UetP5/pYPsH5vO5pL5HOfW58fFvI9E9KqlP5mR97uO68fEfsP58pIPtH6S+uST5fG4u9bn48bE56R8b65v+6bO+9U859HFsOveY8fFvqBfP5yE7/M9I/wY05PAnK/0b0pDAn9SmeS87SOf8D5YpADi7X6QvX8X68vWp/5H1eX5Cfv8K9YVwAAwAZlGfS9U7r/oAAAAASUVORK5CYII=');
-            background-repeat: repeat;
         }
 
         .page-inner img { 
-            width: 90%; height: 90%; object-fit: contain; 
-            border: 10px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.15); 
-            pointer-events: none; -webkit-user-drag: none;
+            width: 88%; height: 88%; object-fit: contain; 
+            border: 10px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
+            pointer-events: none;
         }
         
         .back { transform: rotateX(-180deg); }
         .book.flipped-active .ring { transform: rotateX(-160deg); }
 
+        /* 底部提示语 - 极大增强显眼度 */
         #click-hint {
-            position: absolute; bottom: -130px; width: 100vw; left: 50%; transform: translateX(-50%);
-            text-align: center; color: #fff; font-size: 30px; font-weight: 900;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
-            animation: breathe 2s infinite; pointer-events: none;
+            position: absolute; bottom: -140px; width: 100vw; left: 50%; transform: translateX(-50%);
+            text-align: center; 
+            color: #ffffff; 
+            font-size: 34px; /* 加大 */
+            font-weight: 900;
+            letter-spacing: 2px;
+            /* 核心：增强发光阴影，确保黑背景下极其醒目 */
+            text-shadow: 
+                0 0 10px rgba(66, 200, 245, 0.8),
+                0 0 20px rgba(66, 200, 245, 0.5),
+                0 0 30px rgba(255, 255, 255, 0.4);
+            animation: breathe 1.5s infinite; 
+            pointer-events: none;
         }
 
+        /* 结尾祝福语 */
+        .final-wish h2 { 
+            font-size: 48px; 
+            color: #2a1f12; 
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .final-wish p { font-size: 22px; color: #4a3b2a; font-weight: bold; }
+
         @keyframes breathe { 
-            0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(0.9); } 
-            50% { opacity: 1; transform: translateX(-50%) scale(1); } 
+            0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(0.95); } 
+            50% { opacity: 1; transform: translateX(-50%) scale(1.05); } 
         }
     </style>
 </head>
@@ -107,7 +141,7 @@
             <div class="side cover">
                 <div class="cover-title">
                     <h1>Mwe Sein</h1>
-                    <p style="letter-spacing: 5px; font-size: 14px; margin-top: 10px;">NOTEBOOK</p>
+                    <p>NOTEBOOK</p>
                 </div>
             </div>
             <div class="side back page-inner"><img src="mwe1.jpg" alt="Photo 1"></div>
@@ -126,9 +160,9 @@
         <div class="page" id="p4" style="z-index: 2;">
             <div class="side page-inner"><img src="mwe6.jpg" alt="Photo 6"></div>
             <div class="side back cover" style="border: none;">
-                <div style="text-align:center; color: #3a2b1a; padding: 20px;">
-                    <h2 style="font-size: 36px;">Happy Birthday</h2>
-                    <p style="font-size: 18px;">Wishing you a<br>wonderful day!</p>
+                <div class="final-wish" style="text-align:center; padding: 20px;">
+                    <h2>Happy Birthday</h2>
+                    <p>Wishing you a<br>wonderful day!</p>
                 </div>
             </div>
         </div>
@@ -138,6 +172,7 @@
 </div>
 
 <script>
+// --- JS 部分保持原有逻辑，仅修正可能影响文字显示的逻辑 ---
 const fwCanvas = document.getElementById('fwCanvas');
 const fwCtx = fwCanvas.getContext('2d');
 const pCanvas = document.getElementById('particleCanvas');
@@ -160,7 +195,7 @@ class FireworkParticle {
     }
     draw() {
         fwCtx.save(); fwCtx.globalAlpha = this.alpha; fwCtx.beginPath();
-        fwCtx.arc(this.x, this.y, 2, 0, Math.PI * 2); fwCtx.fillStyle = this.color; fwCtx.fill(); fwCtx.restore();
+        fwCtx.arc(this.x, this.y, 2.5, 0, Math.PI * 2); fwCtx.fillStyle = this.color; fwCtx.fill(); fwCtx.restore();
     }
     update() { this.x += this.velocity.x; this.y += this.velocity.y; this.velocity.y += 0.05; this.alpha -= this.decay; }
 }
@@ -168,7 +203,7 @@ class FireworkParticle {
 function launchFirework() {
     const x = Math.random() * fwW, y = Math.random() * (fwH * 0.6);
     const color = `hsl(${Math.random() * 360}, 100%, 65%)`;
-    for (let i = 0; i < 40; i++) fireworks.push(new FireworkParticle(x, y, color));
+    for (let i = 0; i < 50; i++) fireworks.push(new FireworkParticle(x, y, color));
 }
 
 function animateFW() {
@@ -182,7 +217,7 @@ function getPoints(text) {
     const tempCanvas = document.createElement('canvas');
     const tempCtx = tempCanvas.getContext('2d');
     tempCanvas.width = fwW; tempCanvas.height = fwH;
-    let fs = text.length > 15 ? Math.min(fwW/12, 50) : Math.min(fwW/5, 180);
+    let fs = text.length > 15 ? Math.min(fwW/12, 60) : Math.min(fwW/5, 200);
     tempCtx.font = `bold ${fs}px sans-serif`;
     tempCtx.textAlign = "center"; tempCtx.textBaseline = "middle";
     tempCtx.fillText(text, fwW/2, fwH/2);
@@ -245,17 +280,13 @@ function initBookEvents() {
 
         const moveHandler = (e) => {
             if (!isDragging || currentTargetPage !== page) return;
-            // 关键：阻止移动端默认行为
             if (e.cancelable) e.preventDefault();
-
             const currentY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
             const diff = currentY - startY;
-            
             if (!page.classList.contains('flipped')) {
                 if (diff < 0) {
                     let angle = Math.max(-165, diff * 0.6);
                     page.style.transform = `rotateX(${-angle}deg)`;
-                    // 动态调整层级判定
                     page.style.zIndex = (angle < -90) ? "0" : originalZ;
                 }
             } else {
@@ -272,25 +303,15 @@ function initBookEvents() {
             isDragging = false;
             const endY = e.type.includes('touch') ? (e.changedTouches ? e.changedTouches[0].clientY : startY) : e.clientY;
             const diff = endY - startY;
-            
             page.style.transition = 'transform 0.8s cubic-bezier(0.2, 0, 0.2, 1)';
-            
-            const threshold = 60; // 优化灵敏度
-
+            const threshold = 60; 
             if (!page.classList.contains('flipped')) {
-                if (diff < -threshold) {
-                    flipPage(page, originalZ, true);
-                } else {
-                    resetPage(page, originalZ);
-                }
+                if (diff < -threshold) { flipPage(page, originalZ, true); } 
+                else { resetPage(page, originalZ); }
             } else {
-                if (diff > threshold) {
-                    flipPage(page, originalZ, false);
-                } else {
-                    resetPage(page, originalZ);
-                }
+                if (diff > threshold) { flipPage(page, originalZ, false); } 
+                else { resetPage(page, originalZ); }
             }
-            
             if (Math.abs(diff) < 10) {
                 const currentlyFlipped = page.classList.contains('flipped');
                 flipPage(page, originalZ, !currentlyFlipped);
@@ -300,7 +321,6 @@ function initBookEvents() {
 
         page.addEventListener('mousedown', startHandler);
         page.addEventListener('touchstart', startHandler, {passive: false});
-        // 绑定到 window 确保滑动过程中手指离开页面元素也能响应
         window.addEventListener('mousemove', moveHandler);
         window.addEventListener('touchmove', moveHandler, {passive: false});
         window.addEventListener('mouseup', endHandler);
@@ -322,10 +342,9 @@ function flipPage(el, originalZ, shouldFlip) {
         el.classList.add('flipped');
         el.style.transform = 'rotateX(165deg)';
         if(el.id === 'p1') book.classList.add('flipped-active');
-        // 缩短延时，确保逻辑连贯
         setTimeout(() => { if(el.classList.contains('flipped')) el.style.zIndex = "0"; }, 400);
     } else {
-        el.style.zIndex = originalZ; // 返回时立刻恢复层级，防止被盖住
+        el.style.zIndex = originalZ; 
         if(el.id === 'p1') book.classList.remove('flipped-active');
         el.classList.remove('flipped');
         el.style.transform = 'rotateX(0deg)';
