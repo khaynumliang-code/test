@@ -2,40 +2,90 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mwe Sein - Birthday Gallery</title>
+    <title>Mwe Sein - Vertical Interactive Book</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: system-ui, -apple-system, sans-serif; -webkit-user-select: none; user-select: none; touch-action: none; }
+        /* 增加 touch-action: none 防止移动端下拉刷新干扰翻页 */
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: "Segoe UI", sans-serif; -webkit-user-select: none; user-select: none; touch-action: none; }
         canvas { display: block; position: absolute; top: 0; left: 0; }
         #fwCanvas { z-index: 50; pointer-events: none; }
         #particleCanvas { z-index: 100; pointer-events: none; }
 
-        #gallery-container {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        #book-container {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 650px; height: 580px; perspective: 3000px;
             display: none; opacity: 0; z-index: 200;
             transition: opacity 0.8s ease-in-out;
-            background: #000;
+            touch-action: none;
         }
 
-        .slider { display: flex; width: 100%; height: 100%; will-change: transform; }
-        .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
-        .slide img { max-width: 90%; max-height: 75%; object-fit: contain; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); pointer-events: none; }
-
-        .info-overlay {
-            position: absolute; bottom: 15%; left: 10%; right: 10%; color: white;
-            text-shadow: 0 2px 15px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8);
-            pointer-events: none; z-index: 220;
+        .book { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+        
+        .spiral {
+            position: absolute; top: -15px; left: 20px; width: calc(100% - 40px); height: 30px;
+            display: flex; flex-direction: row; justify-content: space-around;
+            z-index: 10; pointer-events: none; transform-style: preserve-3d;
         }
-        .info-overlay h3 { margin: 0; font-size: clamp(28px, 9vw, 42px); color: #42c8f5; font-weight: 900; letter-spacing: 1px; }
+        .ring {
+            width: 10px; height: 35px; background: linear-gradient(to right, #444, #888, #444);
+            border-radius: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-        .dots { position: absolute; bottom: 40px; width: 100%; display: flex; justify-content: center; gap: 12px; }
-        .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.3); border-radius: 50%; transition: 0.3s; }
-        .dot.active { background: #42c8f5; transform: scale(1.5); }
+        .page {
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+            transform-origin: top; transform-style: preserve-3d;
+            transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: grab;
+            /* 增加硬件加速 */
+            will-change: transform;
+        }
+        .page:active { cursor: grabbing; }
+        
+        .side {
+            position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+            border-radius: 5px 5px 15px 15px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
 
-        #hint {
-            position: absolute; top: 50px; width: 100%; text-align: center;
-            color: rgba(255,255,255,0.8); font-size: 14px; letter-spacing: 4px;
-            z-index: 210; text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+        .cover {
+            background-color: #b3956e;
+            background-image: 
+                linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 5%, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 100%),
+                radial-gradient(rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 100% 100%, 4px 4px;
+            border-top: 15px solid rgba(0,0,0,0.15);
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.2);
+        }
+        
+        .cover-title { text-align: center; color: #3a2b1a; pointer-events: none; }
+        .cover-title h1 { font-size: 52px; margin: 0; font-family: "Georgia", serif; }
+
+        .page-inner { 
+            background-color: #fffef0; 
+            background-image: 
+                linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.02) 5%, transparent 15%),
+                url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3dXWtpaW1tbW9vb3Nzc3V1dXb29vjy8vT09Pd3d3f39/m5ubp6enr6+vt7e3u7u7x8fHy8vLz8/P09PT19fX29vb39/f5+fn6+vn7+/sJaN43AAAAtklEQVQ4y2P4z8AEAtY8NmwAmBwGAwS+GjYAxH6+bXWwYw93Xv4M8f9g488Xf9j688Uftf588UetP5/pYPsH5vO5pL5HOfW58fFvI9E9KqlP5mR97uO68fEfsP58pIPtH6S+uST5fG4u9bn48bE56R8b65v+6bO+9U859HFsOveY8fFvqBfP5yE7/M9I/wY05PAnK/0b0pDAn9SmeS87SOf8D5YpADi7X6QvX8X68vWp/5H1eX5Cfv8K9YVwAAwAZlGfS9U7r/oAAAAASUVORK5CYII=');
+            background-repeat: repeat;
+        }
+
+        .page-inner img { 
+            width: 90%; height: 90%; object-fit: contain; 
+            border: 10px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.15); 
+            pointer-events: none; -webkit-user-drag: none;
+        }
+        
+        .back { transform: rotateX(-180deg); }
+        .book.flipped-active .ring { transform: rotateX(-160deg); }
+
+        #click-hint {
+            position: absolute; bottom: -130px; width: 100vw; left: 50%; transform: translateX(-50%);
+            text-align: center; color: #fff; font-size: 30px; font-weight: 900;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+            animation: breathe 2s infinite; pointer-events: none;
+        }
+
+        @keyframes breathe { 
+            0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(0.9); } 
+            50% { opacity: 1; transform: translateX(-50%) scale(1); } 
         }
     </style>
 </head>
@@ -44,17 +94,47 @@
 <canvas id="fwCanvas"></canvas>
 <canvas id="particleCanvas"></canvas>
 
-<div id="gallery-container">
-    <div id="hint">✦ 左右滑动查看照片 ✦</div>
-    <div class="slider" id="main-slider">
-        <div class="slide"><img src="mwe1.jpg" alt="1"><div class="info-overlay"><h3>Mwe Sein</h3></div></div>
-        <div class="slide"><img src="mwe2.jpg" alt="2"></div>
-        <div class="slide"><img src="mwe3.jpg" alt="3"></div>
-        <div class="slide"><img src="mwe4.jpg" alt="4"></div>
-        <div class="slide"><img src="mwe5.jpg" alt="5"></div>
-        <div class="slide"><img src="mwe6.jpg" alt="6"><div class="info-overlay"><h3>Happy Birthday!</h3></div></div>
+<div id="book-container">
+    <div class="spiral">
+        <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+        <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+        <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+        <div class="ring"></div><div class="ring"></div><div class="ring"></div>
     </div>
-    <div class="dots" id="dot-container"></div>
+
+    <div class="book" id="main-book">
+        <div class="page" id="p1" style="z-index: 5;">
+            <div class="side cover">
+                <div class="cover-title">
+                    <h1>Mwe Sein</h1>
+                    <p style="letter-spacing: 5px; font-size: 14px; margin-top: 10px;">NOTEBOOK</p>
+                </div>
+            </div>
+            <div class="side back page-inner"><img src="mwe1.jpg" alt="Photo 1"></div>
+        </div>
+
+        <div class="page" id="p2" style="z-index: 4;">
+            <div class="side page-inner"><img src="mwe2.jpg" alt="Photo 2"></div>
+            <div class="side back page-inner"><img src="mwe3.jpg" alt="Photo 3"></div>
+        </div>
+
+        <div class="page" id="p3" style="z-index: 3;">
+            <div class="side page-inner"><img src="mwe4.jpg" alt="Photo 4"></div>
+            <div class="side back page-inner"><img src="mwe5.jpg" alt="Photo 5"></div>
+        </div>
+
+        <div class="page" id="p4" style="z-index: 2;">
+            <div class="side page-inner"><img src="mwe6.jpg" alt="Photo 6"></div>
+            <div class="side back cover" style="border: none;">
+                <div style="text-align:center; color: #3a2b1a; padding: 20px;">
+                    <h2 style="font-size: 36px;">Happy Birthday</h2>
+                    <p style="font-size: 18px;">Wishing you a<br>wonderful day!</p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    <div id="click-hint">✦ စာအုပ်ကိုအောက်မှအပေါ်သို့ဆွဲဖွင့်ရန် ✦</div>
 </div>
 
 <script>
@@ -102,33 +182,14 @@ function getPoints(text) {
     const tempCanvas = document.createElement('canvas');
     const tempCtx = tempCanvas.getContext('2d');
     tempCanvas.width = fwW; tempCanvas.height = fwH;
-    
-    let fontSize;
-    if (text.length === 1 && !isNaN(text)) {
-        fontSize = Math.min(fwW * 0.8, 500); 
-    } else {
-        fontSize = Math.min(fwW / 6, 120); 
-    }
-    
-    tempCtx.font = `900 ${fontSize}px system-ui, sans-serif`;
-    tempCtx.textAlign = "center"; 
-    tempCtx.textBaseline = "middle";
-    tempCtx.fillStyle = "white";
-
-    const lines = text.split('\n');
-    const lineHeight = fontSize * 1.1;
-    const totalHeight = lines.length * lineHeight;
-    const startY = (fwH - totalHeight) / 2 + lineHeight / 2;
-
-    lines.forEach((line, index) => {
-        tempCtx.fillText(line, fwW / 2, startY + index * lineHeight);
-    });
-    
+    let fs = text.length > 15 ? Math.min(fwW/12, 50) : Math.min(fwW/5, 180);
+    tempCtx.font = `bold ${fs}px sans-serif`;
+    tempCtx.textAlign = "center"; tempCtx.textBaseline = "middle";
+    tempCtx.fillText(text, fwW/2, fwH/2);
     const data = tempCtx.getImageData(0, 0, fwW, fwH).data;
     const pts = [];
-    const step = 4; 
-    for (let y = 0; y < fwH; y += step) {
-        for (let x = 0; x < fwW; x += step) {
+    for (let y = 0; y < fwH; y += 7) {
+        for (let x = 0; x < fwW; x += 7) {
             if (data[(y * fwW + x) * 4 + 3] > 128) pts.push({x, y});
         }
     }
@@ -146,89 +207,134 @@ function runFlow() {
     if (countdownNum >= 1) {
         updateTargets(getPoints(countdownNum.toString()));
         countdownNum--; 
-        setTimeout(runFlow, 1000);
+        setTimeout(runFlow, 800);
     } else {
-        updateTargets(getPoints("Happy\nBirthday"));
-        const fwLaunch = setInterval(launchFirework, 150); 
+        updateTargets(getPoints("Happy Birthday to You"));
+        const fwLaunch = setInterval(launchFirework, 120); 
         setTimeout(() => {
-            updateTargets(getPoints("To\nYou"));
+            clearInterval(fwLaunch);
+            updateTargets(getPoints("Mwe Sein"));
             setTimeout(() => {
-                clearInterval(fwLaunch);
-                updateTargets(getPoints("Mwe Sein"));
-                setTimeout(() => {
-                    particles.forEach(p => p.ty = -fwH);
-                    setTimeout(() => { 
-                        hideParticles = true; 
-                        const container = document.getElementById('gallery-container');
-                        container.style.display = 'block'; 
-                        setTimeout(() => container.style.opacity = '1', 50); 
-                        initGallery(); 
-                    }, 800);
-                }, 2200);
-            }, 2000);
-        }, 2200);
+                particles.forEach(p => p.ty = -fwH);
+                setTimeout(() => { 
+                    hideParticles = true; 
+                    const container = document.getElementById('book-container');
+                    container.style.display = 'block'; 
+                    setTimeout(() => container.style.opacity = '1', 50); 
+                    initBookEvents(); 
+                }, 600);
+            }, 1800);
+        }, 2500);
     }
 }
 
-/* --- 优化后的灵敏滑动逻辑 --- */
-function initGallery() {
-    const slider = document.getElementById('main-slider');
-    const slides = document.querySelectorAll('.slide');
-    const dotContainer = document.getElementById('dot-container');
-    let currentIndex = 0, isDragging = false, startX = 0, currentTranslate = 0, prevTranslate = 0;
+function initBookEvents() {
+    const pages = document.querySelectorAll('.page');
+    let isDragging = false, startY = 0, currentTargetPage = null;
 
-    dotContainer.innerHTML = '';
-    slides.forEach((_, i) => {
-        const d = document.createElement('div');
-        d.className = i === 0 ? 'dot active' : 'dot';
-        dotContainer.appendChild(d);
+    pages.forEach(page => {
+        const originalZ = parseInt(window.getComputedStyle(page).zIndex); 
+        page.querySelectorAll('img').forEach(img => { img.ondragstart = () => false; });
+
+        const startHandler = (e) => {
+            isDragging = true; 
+            currentTargetPage = page;
+            startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            page.style.transition = 'none'; 
+        };
+
+        const moveHandler = (e) => {
+            if (!isDragging || currentTargetPage !== page) return;
+            // 关键：阻止移动端默认行为
+            if (e.cancelable) e.preventDefault();
+
+            const currentY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            const diff = currentY - startY;
+            
+            if (!page.classList.contains('flipped')) {
+                if (diff < 0) {
+                    let angle = Math.max(-165, diff * 0.6);
+                    page.style.transform = `rotateX(${-angle}deg)`;
+                    // 动态调整层级判定
+                    page.style.zIndex = (angle < -90) ? "0" : originalZ;
+                }
+            } else {
+                if (diff > 0) {
+                    let angle = Math.min(0, -165 + diff * 0.6);
+                    page.style.transform = `rotateX(${-angle}deg)`;
+                    page.style.zIndex = (angle > -90) ? originalZ : "0";
+                }
+            }
+        };
+
+        const endHandler = (e) => {
+            if (!isDragging || currentTargetPage !== page) return;
+            isDragging = false;
+            const endY = e.type.includes('touch') ? (e.changedTouches ? e.changedTouches[0].clientY : startY) : e.clientY;
+            const diff = endY - startY;
+            
+            page.style.transition = 'transform 0.8s cubic-bezier(0.2, 0, 0.2, 1)';
+            
+            const threshold = 60; // 优化灵敏度
+
+            if (!page.classList.contains('flipped')) {
+                if (diff < -threshold) {
+                    flipPage(page, originalZ, true);
+                } else {
+                    resetPage(page, originalZ);
+                }
+            } else {
+                if (diff > threshold) {
+                    flipPage(page, originalZ, false);
+                } else {
+                    resetPage(page, originalZ);
+                }
+            }
+            
+            if (Math.abs(diff) < 10) {
+                const currentlyFlipped = page.classList.contains('flipped');
+                flipPage(page, originalZ, !currentlyFlipped);
+            }
+            currentTargetPage = null;
+        };
+
+        page.addEventListener('mousedown', startHandler);
+        page.addEventListener('touchstart', startHandler, {passive: false});
+        // 绑定到 window 确保滑动过程中手指离开页面元素也能响应
+        window.addEventListener('mousemove', moveHandler);
+        window.addEventListener('touchmove', moveHandler, {passive: false});
+        window.addEventListener('mouseup', endHandler);
+        window.addEventListener('touchend', endHandler);
     });
+}
 
-    function setSliderPosition() { slider.style.transform = `translateX(${currentTranslate}px)`; }
-    function setPositionByIndex() {
-        currentTranslate = currentIndex * -window.innerWidth;
-        prevTranslate = currentTranslate;
-        slider.style.transition = 'transform 0.5s cubic-bezier(0.15, 0.3, 0.25, 1)'; // 缩短过渡时间，更跟手
-        setSliderPosition();
-        document.querySelectorAll('.dot').forEach((dot, i) => dot.classList.toggle('active', i === currentIndex));
+function resetPage(el, originalZ) { 
+    const isFlipped = el.classList.contains('flipped');
+    el.style.transform = isFlipped ? 'rotateX(165deg)' : 'rotateX(0deg)'; 
+    el.style.zIndex = isFlipped ? "0" : originalZ;
+}
+
+function flipPage(el, originalZ, shouldFlip) {
+    const book = document.getElementById('main-book');
+    const hint = document.getElementById('click-hint');
+    if(hint) hint.style.display = 'none';
+    if (shouldFlip) {
+        el.classList.add('flipped');
+        el.style.transform = 'rotateX(165deg)';
+        if(el.id === 'p1') book.classList.add('flipped-active');
+        // 缩短延时，确保逻辑连贯
+        setTimeout(() => { if(el.classList.contains('flipped')) el.style.zIndex = "0"; }, 400);
+    } else {
+        el.style.zIndex = originalZ; // 返回时立刻恢复层级，防止被盖住
+        if(el.id === 'p1') book.classList.remove('flipped-active');
+        el.classList.remove('flipped');
+        el.style.transform = 'rotateX(0deg)';
     }
-
-    function onStart(e) {
-        isDragging = true;
-        startX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-        slider.style.transition = 'none';
-        prevTranslate = currentIndex * -window.innerWidth;
-    }
-    function onMove(e) {
-        if (!isDragging) return;
-        const currentX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-        currentTranslate = prevTranslate + (currentX - startX);
-        setSliderPosition();
-    }
-    function onEnd() {
-        if (!isDragging) return;
-        isDragging = false;
-        const movedBy = currentTranslate - prevTranslate;
-
-        // 核心修改：大幅降低翻页门槛（从 100 降到 30 像素）
-        const threshold = 30; 
-        if (movedBy < -threshold && currentIndex < slides.length - 1) currentIndex++;
-        else if (movedBy > threshold && currentIndex > 0) currentIndex--;
-
-        setPositionByIndex();
-    }
-
-    slider.addEventListener('touchstart', onStart, { passive: true });
-    slider.addEventListener('touchmove', onMove, { passive: true });
-    slider.addEventListener('touchend', onEnd);
-    slider.addEventListener('mousedown', onStart);
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onEnd);
 }
 
 function initParticles() {
-    for (let i = 0; i < 3500; i++) {
-        particles.push({ x: Math.random()*fwW, y: Math.random()*fwH, tx: fwW/2, ty: fwH/2, size: Math.random()*2.5 + 1 });
+    for (let i = 0; i < 2000; i++) {
+        particles.push({ x: Math.random()*fwW, y: Math.random()*fwH, tx: fwW/2, ty: fwH/2, size: Math.random()*2 + 1 });
     }
     runFlow();
 }
@@ -236,10 +342,9 @@ function initParticles() {
 function animateParticles() {
     if (!hideParticles) {
         pCtx.clearRect(0, 0, fwW, fwH);
-        pCtx.fillStyle = BLUE_COLOR;
         particles.forEach(p => {
-            p.x += (p.tx - p.x) * 0.1; p.y += (p.ty - p.y) * 0.1;
-            pCtx.beginPath(); pCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); pCtx.fill();
+            p.x += (p.tx - p.x) * 0.09; p.y += (p.ty - p.y) * 0.09;
+            pCtx.fillStyle = BLUE_COLOR; pCtx.beginPath(); pCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); pCtx.fill();
         });
     }
     requestAnimationFrame(animateParticles);
